@@ -306,6 +306,25 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
     doTest(expectedFileTree, "testData/stepik/updateCourse/task_file_text_changed")
   }
 
+  fun `test theory task file text changed`() {
+    val expectedFileTree = fileTree {
+      dir("lesson1") {
+        dir("Theory") {
+          dir("src") {
+            file("Task.java",  "class Task {\n  // Changed put your task here\n}")
+          }
+          dir("test") {
+            file("Test.java")
+          }
+        }
+      }
+      file("build.gradle")
+      file("settings.gradle")
+    }
+
+    doTest(expectedFileTree, "testData/stepik/updateCourse/theory_task_file_changed")
+  }
+
   fun `test task file in section text changed`() {
     val expectedFileTree = fileTree {
       dir("section1") {
