@@ -3,15 +3,11 @@ package com.jetbrains.edu.learning.courseFormat;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.EmptyProgressIndicator;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task.Backgroundable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.KeyedLazyInstance;
 import com.jetbrains.edu.learning.EduConfiguratorManager;
-import com.jetbrains.edu.learning.EduVersions;
 import com.jetbrains.edu.learning.EduSettings;
+import com.jetbrains.edu.learning.EduVersions;
 import com.jetbrains.edu.learning.courseFormat.tasks.Task;
 import com.jetbrains.edu.learning.stepik.StepikConnector;
 import com.jetbrains.edu.learning.stepik.StepikNames;
@@ -127,10 +123,7 @@ public class RemoteCourse extends Course {
       return true;
     });
 
-    visitSections((section) -> {
-      section.setUpdateDate(StepikConnector.getSectionUpdateDate((section).getId()));
-      return true;
-    });
+    visitSections(section -> section.setUpdateDate(StepikConnector.getSectionUpdateDate((section).getId())));
   }
 
   public void setUpdateDate(Date date) {
