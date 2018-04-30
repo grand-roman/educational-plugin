@@ -13,9 +13,7 @@ import com.jetbrains.edu.learning.EduSettings
 import com.jetbrains.edu.learning.EduUtils.synchronize
 import com.jetbrains.edu.learning.courseFormat.*
 import com.jetbrains.edu.learning.courseFormat.ext.configurator
-import com.jetbrains.edu.learning.courseFormat.tasks.ChoiceTask
 import com.jetbrains.edu.learning.courseFormat.tasks.Task
-import com.jetbrains.edu.learning.courseFormat.tasks.TheoryTask
 import com.jetbrains.edu.learning.courseGeneration.GeneratorUtils
 import com.jetbrains.edu.learning.stepik.StepikConnector.getCourse
 import com.jetbrains.edu.learning.stepik.StepikConnector.getCourseFromStepik
@@ -156,7 +154,7 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
                           updatedTasks: ArrayList<Task>,
                           lessonDir: VirtualFile?) {
     val serverTasksById = lessonFromServer.taskList.associateBy({ it.stepId }, { it })
-    val tasksById = currentLesson.taskList.associateBy({ it.stepId }, { it })
+    val tasksById = currentLesson.taskList.associateBy { it.stepId }
     for (taskId in taskIdsToUpdate) {
       val taskFromServer = serverTasksById[taskId]
       val taskIndex = taskFromServer!!.index
@@ -168,20 +166,16 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
           currentTask.description = taskFromServer.description
           continue
         }
-        if (updateFilesNeeded(currentTask)) {
-          removeExistingDir(currentTask, lessonDir)
-        }
+        removeExistingDir(currentTask, lessonDir)
       }
 
       taskFromServer.init(course, currentLesson, false)
+
 
       createTaskDirectories(lessonDir!!, taskFromServer)
       updatedTasks.add(taskFromServer)
     }
   }
-
-  private fun updateFilesNeeded(currentTask: Task?) =
-    currentTask !is TheoryTask && currentTask !is ChoiceTask
 
   private fun upToDateTasks(currentLesson: Lesson,
                             taskIdsToUpdate: List<Int>) =
