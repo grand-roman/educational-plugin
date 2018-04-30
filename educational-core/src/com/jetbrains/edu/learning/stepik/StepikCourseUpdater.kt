@@ -146,6 +146,7 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
 
       val lessonsToUpdate = sectionFromServer.lessons.filter { it.id in currentLessons }
       updateLessons(lessonsToUpdate, currentSection)
+      sectionFromServer.init(course, course, false)
     }
   }
 
