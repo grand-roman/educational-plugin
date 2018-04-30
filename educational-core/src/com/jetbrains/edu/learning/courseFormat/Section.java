@@ -16,6 +16,7 @@ public class Section extends ItemContainer {
   private String name;
 
   private int position;
+  @Expose
   private int id;
   @Expose
   @SerializedName("update_date")

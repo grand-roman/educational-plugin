@@ -39,7 +39,7 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
     doTest(expectedFileTree, "testData/stepik/updateCourse/lesson_added")
   }
 
-  fun `test lesson moved`() {
+  fun `test lesson rearranged`() {
     val expectedFileTree = fileTree {
       dir("lesson2") {
         dir("task1") {
@@ -65,8 +65,40 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
       file("settings.gradle")
     }
 
-    doTest(expectedFileTree, "testData/stepik/updateCourse/lessons_moved")
+    doTest(expectedFileTree, "testData/stepik/updateCourse/lessons_rearranged")
   }
+
+  fun `test lesson rearranged in section`() {
+    val expectedFileTree = fileTree {
+      dir("section1") {
+        dir("lesson2") {
+          dir("task1") {
+            dir("src") {
+              file("Task.java")
+            }
+            dir("test") {
+              file("Test.java")
+            }
+          }
+        }
+        dir("lesson1") {
+          dir("task1") {
+            dir("src") {
+              file("Task.java")
+            }
+            dir("test") {
+              file("Test.java")
+            }
+          }
+        }
+      }
+      file("build.gradle")
+      file("settings.gradle")
+    }
+
+    doTest(expectedFileTree, "testData/stepik/updateCourse/lessons_rearranged_in_section")
+  }
+
 
   fun `test lesson renamed`() {
     val expectedFileTree = fileTree {
@@ -86,7 +118,6 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
 
     doTest(expectedFileTree, "testData/stepik/updateCourse/lesson_renamed")
   }
-
   fun `test task added`() {
     val expectedFileTree = fileTree {
       dir("lesson1") {
@@ -113,6 +144,61 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
 
     doTest(expectedFileTree, "testData/stepik/updateCourse/task_added")
   }
+
+  fun `test theory task added`() {
+    val expectedFileTree = fileTree {
+      dir("lesson1") {
+        dir("task1") {
+          dir("src") {
+            file("Task.java")
+          }
+          dir("test") {
+            file("Test.java")
+          }
+        }
+        dir("Theory") {
+          dir("src") {
+            file("Task.java")
+          }
+          dir("test") {
+            file("Test.java")
+          }
+        }
+      }
+      file("build.gradle")
+      file("settings.gradle")
+    }
+
+    doTest(expectedFileTree, "testData/stepik/updateCourse/theory_task_added")
+  }
+
+  fun `test theory task text changed`() {
+    val expectedFileTree = fileTree {
+      dir("lesson1") {
+        dir("task1") {
+          dir("src") {
+            file("Task.java")
+          }
+          dir("test") {
+            file("Test.java")
+          }
+        }
+        dir("Theory") {
+          dir("src") {
+            file("Task.java")
+          }
+          dir("test") {
+            file("Test.java")
+          }
+        }
+      }
+      file("build.gradle")
+      file("settings.gradle")
+    }
+
+    doTest(expectedFileTree, "testData/stepik/updateCourse/theory_task_text_changed")
+  }
+
 
   fun `test task in section added`() {
     val expectedFileTree = fileTree {
@@ -234,7 +320,6 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
           }
         }
       }
-
       file("build.gradle")
       file("settings.gradle")
     }
@@ -272,6 +357,39 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
     }
 
     doTest(expectedFileTree, "testData/stepik/updateCourse/section_added")
+  }
+
+  fun `test sections rearranged`() {
+    val expectedFileTree = fileTree {
+      dir("section2") {
+        dir("lesson1") {
+          dir("task1") {
+            dir("src") {
+              file("Task.java",  "class Task {\n  // put your task here\n}")
+            }
+            dir("test") {
+              file("Test.java")
+            }
+          }
+        }
+      }
+      dir("section1") {
+        dir("lesson1") {
+          dir("task1") {
+            dir("src") {
+              file("Task.java",  "class Task {\n  // put your task here\n}")
+            }
+            dir("test") {
+              file("Test.java")
+            }
+          }
+        }
+      }
+      file("build.gradle")
+      file("settings.gradle")
+    }
+
+    doTest(expectedFileTree, "testData/stepik/updateCourse/sections_rearranged")
   }
 
   fun `test lesson added into section`() {
