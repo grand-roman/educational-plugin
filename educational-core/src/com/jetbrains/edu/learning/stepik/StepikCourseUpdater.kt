@@ -124,7 +124,7 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
 
   @Throws(URISyntaxException::class, IOException::class)
   private fun updateSections(sectionsFromServer: List<Section>) {
-    val sectionsById = course.sections.associateBy({ it.id }, { it })
+    val sectionsById = course.sections.associateBy{ it.id }
     for (sectionFromServer in sectionsFromServer) {
       sectionFromServer.lessons.withIndex().forEach { (index, lesson) -> lesson.index = index + 1 }
 
