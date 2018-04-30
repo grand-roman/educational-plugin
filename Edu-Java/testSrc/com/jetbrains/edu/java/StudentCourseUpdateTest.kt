@@ -1,6 +1,7 @@
 package com.jetbrains.edu.java
 
 import com.jetbrains.edu.learning.*
+import com.jetbrains.edu.learning.courseFormat.Lesson
 import com.jetbrains.edu.learning.intellij.JdkProjectSettings
 import com.jetbrains.edu.learning.stepik.StepikCourseUpdater
 import junit.framework.TestCase
@@ -232,9 +233,10 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
             }
           }
         }
-        file("build.gradle")
-        file("settings.gradle")
       }
+
+      file("build.gradle")
+      file("settings.gradle")
     }
 
     doTest(expectedFileTree, "testData/stepik/updateCourse/task_file_in_section_text_changed")
@@ -384,7 +386,28 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
     StepikCourseUpdater(course, project).doUpdate(courseFromServer)
     TestCase.assertEquals("Lessons number mismatch. Expected: ${courseFromServer.lessons.size}. Actual: ${course.lessons.size}",
                           courseFromServer.lessons.size, course.lessons.size)
-    for ((lesson, newLesson) in course.lessons.zip(courseFromServer.lessons)) {
+
+    TestCase.assertEquals("Sections number mismatch. Expected: ${courseFromServer.sections.size}. Actual: ${course.sections.size}",
+                          courseFromServer.sections.size, course.sections.size)
+
+    for ((section, newSection) in course.sections.zip(courseFromServer.sections)) {
+      TestCase.assertTrue("Lesson number mismatch.\n" +
+                          "Lesson \"${section.name}\". \n" +
+                          "Expected lesson number: ${newSection.lessons.size}. Actual: ${section.lessons.size}",
+                          section.lessons.size == newSection.lessons.size)
+
+      checkLessons(section.lessons, newSection.lessons)
+    }
+
+    checkLessons(course.lessons, courseFromServer.lessons)
+
+
+    expectedFileTree.assertEquals(rootDir)
+  }
+
+  private fun checkLessons(lessons: List<Lesson>,
+                           lessonsFromServer: List<Lesson>) {
+    for ((lesson, newLesson) in lessons.zip(lessonsFromServer)) {
       TestCase.assertTrue("Tasks number mismatch.\n" +
                           "Lesson \"${lesson.name}\". \n" +
                           "Expected task number: ${newLesson.taskList.size}. Actual: ${lesson.taskList.size}",
@@ -415,7 +438,6 @@ class StudentCourseUpdateTest : CourseGenerationTestBase<JdkProjectSettings>() {
                             " Actual: Lesson \"${lesson.name}\", index: ${lesson.index}", lesson.index == newLesson.index)
 
       }
-      expectedFileTree.assertEquals(rootDir)
     }
   }
 }
