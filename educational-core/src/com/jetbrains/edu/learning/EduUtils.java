@@ -912,16 +912,21 @@ public class EduUtils {
   }
 
   @Nullable
-  public static TaskFile createStudentFile(@NotNull Project project, @NotNull VirtualFile answerFile, @Nullable Task task) {
+  public static TaskFile createStudentFile(@NotNull Project project, @NotNull VirtualFile answerFile, @Nullable final Task task) {
     try {
+      Task taskCopy;
       if (task == null) {
-        task = getTaskForFile(project, answerFile);
-        if (task == null) {
+        Task taskForFile = getTaskForFile(project, answerFile);
+        if (taskForFile == null) {
           return null;
         }
-        task = task.copy();
+        taskCopy = taskForFile.copy();
       }
-      TaskFile taskFile = task.getTaskFile(pathRelativeToTask(project, answerFile));
+      else {
+        taskCopy = task.copy();
+      }
+
+      TaskFile taskFile = taskCopy.getTaskFile(pathRelativeToTask(project, answerFile));
       if (taskFile == null) {
         return null;
       }
@@ -945,7 +950,7 @@ public class EduUtils {
       for (AnswerPlaceholder placeholder : taskFile.getAnswerPlaceholders()) {
         replaceAnswerPlaceholder(studentDocument, placeholder, placeholder.getPossibleAnswer().length(), placeholder.getPlaceholderText());
       }
-      taskFile.setTrackChanges(true);
+      taskFile.setTrackLengths(true);
       studentDocument.removeDocumentListener(listener);
       taskFile.text = studentDocument.getImmutableCharSequence().toString();
       return taskFile;
