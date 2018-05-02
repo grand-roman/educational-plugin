@@ -17,6 +17,7 @@ import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.*
+import com.intellij.psi.PsiDirectory
 import com.intellij.util.Function
 import com.intellij.util.PathUtil
 import com.intellij.util.ThrowableConsumer
@@ -377,5 +378,19 @@ object CCUtils {
 
       null
     })
+  }
+
+  @JvmStatic
+  fun lessonFromDir(course: Course, lessonDir: PsiDirectory): Lesson? {
+    val lesson = course.getLesson(lessonDir.name)
+    if (lesson != null) {
+      return lesson
+    }
+
+    val sectionDir = lessonDir.parent ?: return null
+
+    val section = course.getSection(sectionDir.name) ?: return null
+
+    return section.getLesson(lessonDir.name)
   }
 }
