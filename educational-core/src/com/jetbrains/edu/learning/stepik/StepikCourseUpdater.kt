@@ -34,6 +34,7 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
     oldLessonDirectories.clear()
     oldSectionDirectories.clear()
     val courseFromServer = courseFromServer(project, course)
+    addTopLevelLessons(courseFromServer)
     val (updatedLessons, newLessons) = doUpdate(courseFromServer)
     runInEdt {
       synchronize()
@@ -43,17 +44,29 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
     }
   }
 
+  // On Stepik top-level lessons section is named after a course
+  // In case it was renamed on stepik, its lessons  won't be parsed as top-level
+  // so we need to copy them manually
+  private fun addTopLevelLessons(courseFromServer: Course?) {
+    if (!courseFromServer!!.sections.isEmpty() && !course.sectionIds.isEmpty()) {
+      if (courseFromServer.sections[0].id == course.sectionIds[0]) {
+        courseFromServer.addLessons(courseFromServer.sections[0].lessons)
+      }
+    }
+  }
+
   fun doUpdate(courseFromServer: Course?): Pair<Int, Int> {
     if (courseFromServer == null) {
       LOG.warn("Course ${course.id} not found on Stepik")
       return Pair(0, 0)
     }
 
-    val newSections = courseFromServer.sections.filter { section -> section.id !in course.sectionIds }
+    val sectionIds = course.sections.map { it.id }
+    val newSections = courseFromServer.sections.filter { section -> section.id !in sectionIds }
     if (!newSections.isEmpty()) {
       createNewSections(project, newSections)
     }
-    val sectionsToUpdate = courseFromServer.sections.filter { section -> section.id in course.sectionIds }
+    val sectionsToUpdate = courseFromServer.sections.filter { section -> section.id in sectionIds }
     updateSections(sectionsToUpdate)
 
     courseFromServer.items.withIndex().forEach({ (index, lesson) -> lesson.index = index + 1 })
@@ -130,8 +143,14 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
     for (sectionFromServer in sectionsFromServer) {
       sectionFromServer.lessons.withIndex().forEach { (index, lesson) -> lesson.index = index + 1 }
 
-      val currentSection = sectionsById[sectionFromServer.id]
+      if (!course.lessons.isEmpty()) {
+        val isTopLevelLessonsSection = sectionFromServer.id == course.sectionIds[0]
+        if (isTopLevelLessonsSection) {
+          return
+        }
+      }
 
+      val currentSection = sectionsById[sectionFromServer.id]
       val currentLessons = currentSection!!.lessons.map { it.id }
 
       val newLessons = sectionFromServer.lessons.filter { it.id !in currentLessons }

@@ -28,6 +28,8 @@ public class RemoteCourse extends Course {
   @SerializedName("course_format") private String myType =
                         String.format("%s%d %s", StepikNames.PYCHARM_PREFIX, EduVersions.JSON_FORMAT_VERSION, getLanguageID());
   @SerializedName("is_idea_compatible") private boolean isCompatible = true;
+
+  // in CC mode is used to store top-level lessons section id
   @SerializedName("sections") List<Integer> sectionIds;
   List<Integer> instructors = new ArrayList<>();
   @Expose private int id;
@@ -89,7 +91,7 @@ public class RemoteCourse extends Course {
     }
 
     int topLevelItemsWithoutAdditional = courseFromServer.sectionIds.size() - 1;
-    int topLevelItemsSize = (getLessons(false).isEmpty() ? 0 : 1) + getSections().size();
+    int topLevelItemsSize = (getLessons().isEmpty() ? 0 : 1) + getSections().size();
     if (topLevelItemsSize < topLevelItemsWithoutAdditional) {
       return false;
     }
