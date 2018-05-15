@@ -912,19 +912,9 @@ public class EduUtils {
   }
 
   @Nullable
-  public static TaskFile createStudentFile(@NotNull Project project, @NotNull VirtualFile answerFile, @Nullable final Task task) {
+  public static TaskFile createStudentFile(@NotNull Project project, @NotNull VirtualFile answerFile, @NotNull final Task task) {
     try {
-      Task taskCopy;
-      if (task == null) {
-        Task taskForFile = getTaskForFile(project, answerFile);
-        if (taskForFile == null) {
-          return null;
-        }
-        taskCopy = taskForFile.copy();
-      }
-      else {
-        taskCopy = task.copy();
-      }
+      Task taskCopy = task.copy();
 
       TaskFile taskFile = taskCopy.getTaskFile(pathRelativeToTask(project, answerFile));
       if (taskFile == null) {
