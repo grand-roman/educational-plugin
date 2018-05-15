@@ -99,7 +99,8 @@ public class CCPushTask extends DumbAwareAction {
           boolean isPosted = CCStepikConnector.postTask(project, task, lesson.getId());
           if (isPosted) {
             CCStepikConnector.showNotification(project, "Task " + task.getName() + " uploaded",
-                                               CCStepikConnector.seeOnStepikAction("/lesson/" + task.getLesson().getId() + "/step/" + task.getIndex())
+                                               CCStepikConnector
+                                                 .seeOnStepikAction("/lesson/" + task.getLesson().getId() + "/step/" + task.getIndex())
             );
           }
           else {
@@ -121,5 +122,4 @@ public class CCPushTask extends DumbAwareAction {
       }
     });
   }
-
 }

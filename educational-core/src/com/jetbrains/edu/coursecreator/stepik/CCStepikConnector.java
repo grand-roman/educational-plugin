@@ -21,6 +21,7 @@ import com.intellij.util.xmlb.XmlSerializer;
 import com.jetbrains.edu.coursecreator.CCUtils;
 import com.jetbrains.edu.learning.*;
 import com.jetbrains.edu.learning.courseFormat.*;
+import com.jetbrains.edu.learning.courseFormat.ext.CourseExt;
 import com.jetbrains.edu.learning.courseFormat.tasks.ChoiceTask;
 import com.jetbrains.edu.learning.courseFormat.tasks.CodeTask;
 import com.jetbrains.edu.learning.courseFormat.tasks.Task;
@@ -136,12 +137,12 @@ public class CCStepikConnector {
 
       addJetBrainsUserAsAdmin(client, getAdminsGroupId(responseString));
       int sectionCount;
-      if (!course.getSections().isEmpty()) {
-        sectionCount = postSections(project, courseOnRemote);
-      }
-      else {
+      if (CourseExt.getHasSections(course)) {
         sectionCount = 1;
         postTopLevelLessons(project, courseOnRemote);
+      }
+      else {
+        sectionCount = postSections(project, courseOnRemote);
       }
 
       ApplicationManager.getApplication().invokeAndWait(() -> FileDocumentManager.getInstance().saveAllDocuments());
@@ -226,10 +227,9 @@ public class CCStepikConnector {
   }
 
   public static int postSection(@NotNull Project project, @NotNull Section section, @Nullable ProgressIndicator indicator) {
-    RemoteCourse course = (RemoteCourse) StudyTaskManager.getInstance(project).getCourse();
+    RemoteCourse course = (RemoteCourse)StudyTaskManager.getInstance(project).getCourse();
     assert course != null;
 
-    boolean hasTopLevelLessons = course.getLessons().isEmpty();
     int position = 1;
     for (Section s : course.getSections()) {
       if (s.getName().equals(section.getName())) {
@@ -237,7 +237,7 @@ public class CCStepikConnector {
       }
       position++;
     }
-    position += (hasTopLevelLessons ? 1 : 0);
+    position += (CourseExt.getHasTopLevelLessons(course) ? 1 : 0);
     section.setPosition(position);
     final int sectionId = postModule(project, copySection(section), course.getId());
     section.setId(sectionId);
@@ -248,13 +248,12 @@ public class CCStepikConnector {
   }
 
   public static boolean updateSection(@NotNull Project project, @NotNull Section section) {
-    RemoteCourse course = (RemoteCourse) StudyTaskManager.getInstance(project).getCourse();
+    RemoteCourse course = (RemoteCourse)StudyTaskManager.getInstance(project).getCourse();
     assert course != null;
-    boolean hasTopLevelLessons = course.getLessons().isEmpty();
-    int position = section.getIndex() + (hasTopLevelLessons ? 1 : 0);
+    int position = section.getIndex() + (CourseExt.getHasTopLevelLessons(course) ? 1 : 0);
     section.setPosition(position);
     section.setCourse(course.getId());
-    boolean updated = updateModule(project, copySection(section));
+    boolean updated = updateSectionInfo(project, copySection(section));
     if (updated) {
       for (Lesson lesson : section.getLessons()) {
         updateLessonInfo(project, lesson, false);
@@ -442,7 +441,7 @@ public class CCStepikConnector {
     return -1;
   }
 
-  private static boolean updateModule(@NotNull Project project, @NotNull Section section) {
+  private static boolean updateSectionInfo(@NotNull Project project, @NotNull Section section) {
     final HttpPut request = new HttpPut(StepikNames.STEPIK_API_URL + StepikNames.SECTIONS + "/" + section.getId());
     final StepikWrappers.SectionWrapper sectionContainer = new StepikWrappers.SectionWrapper();
     sectionContainer.setSection(section);
@@ -534,7 +533,8 @@ public class CCStepikConnector {
     if (courseInfo != null) {
       course.setPublic(courseInfo.isPublic());
       course.setCompatible(courseInfo.isCompatible());
-    } else {
+    }
+    else {
       LOG.warn("Failed to get current course info");
     }
 
@@ -560,7 +560,7 @@ public class CCStepikConnector {
         LOG.warn(message + responseString);
         final String detailString = getErrorDetail(responseString);
 
-          showErrorNotification(project, FAILED_TITLE, detailString);
+        showErrorNotification(project, FAILED_TITLE, detailString);
       }
 
       course.setUpdated();
@@ -570,45 +570,45 @@ public class CCStepikConnector {
     }
   }
 
-  public static boolean updateAdditionalMaterials(@NotNull Project project, int id) throws IOException {
+  public static void updateAdditionalMaterials(@NotNull Project project, int courseId) throws IOException {
     AtomicBoolean additionalMaterialsUpdated = new AtomicBoolean(false);
-    RemoteCourse courseInfo = getCourseInfo(String.valueOf(id));
-    assert  courseInfo != null;
+    RemoteCourse courseInfo = getCourseInfo(String.valueOf(courseId));
+    assert courseInfo != null;
 
     List<Integer> sectionIds = courseInfo.getSectionIds();
     for (Integer sectionId : sectionIds) {
       final Section section = StepikConnector.getSection(sectionId);
       if (StepikNames.PYCHARM_ADDITIONAL.equals(section.getName())) {
         section.setPosition(sectionIds.size() - 1);
-        updateModule(project, copySection(section));
+        updateSectionInfo(project, copySection(section));
         final List<Lesson> lessons = StepikConnector.getLessons(courseInfo, sectionId);
         lessons.stream()
-                .filter(Lesson::isAdditional)
-                .findFirst()
-                .ifPresent(lesson -> {
-                        updateAdditionalFiles(courseInfo, project, lesson.getId());
-                        additionalMaterialsUpdated.set(true);
-                });
+          .filter(Lesson::isAdditional)
+          .findFirst()
+          .ifPresent(lesson -> {
+            updateAdditionalFiles(courseInfo, project, lesson.getId());
+            additionalMaterialsUpdated.set(true);
+          });
       }
     }
-    return additionalMaterialsUpdated.get();
+    additionalMaterialsUpdated.get();
   }
 
   public static boolean updateAdditionalSection(@NotNull Project project) {
     AtomicBoolean additionalMaterialsUpdated = new AtomicBoolean(false);
 
     RemoteCourse course = (RemoteCourse)StudyTaskManager.getInstance(project).getCourse();
-    assert  course != null;
+    assert course != null;
 
     RemoteCourse courseInfo = getCourseInfo(String.valueOf(course.getId()));
-    assert  courseInfo != null;
+    assert courseInfo != null;
 
     List<Integer> sectionIds = courseInfo.getSectionIds();
     for (Integer sectionId : sectionIds) {
       final Section section = StepikConnector.getSection(sectionId);
       if (StepikNames.PYCHARM_ADDITIONAL.equals(section.getName())) {
         section.setPosition(sectionIds.size());
-        updateModule(project, copySection(section));
+        updateSectionInfo(project, copySection(section));
       }
     }
 
@@ -637,7 +637,7 @@ public class CCStepikConnector {
   }
 
   public static Lesson updateLessonInfo(@NotNull final Project project, @NotNull final Lesson lesson, boolean showNotification) {
-    if(!checkIfAuthorized(project, "update lesson")) return null;
+    if (!checkIfAuthorized(project, "update lesson")) return null;
 
     final HttpPut request = new HttpPut(StepikNames.STEPIK_API_URL + StepikNames.LESSONS + String.valueOf(lesson.getId()));
 
@@ -721,7 +721,8 @@ public class CCStepikConnector {
       checkCancelled();
       if (task.getStepId() > 0) {
         updateTask(project, task);
-      } else {
+      }
+      else {
         postTask(project, task, localLesson.getId());
       }
     }
@@ -810,7 +811,7 @@ public class CCStepikConnector {
         final JsonElement detail = details.get("detail");
         final String detailString = detail != null ? detail.getAsString() : responseString;
 
-          showErrorNotification(project, message, detailString);
+        showErrorNotification(project, message, detailString);
         return 0;
       }
 
@@ -874,7 +875,7 @@ public class CCStepikConnector {
           LOG.error("Failed to delete task " + responseString);
           final String detailString = getErrorDetail(responseString);
 
-            showErrorNotification(project, "Failed to delete task ", detailString);
+          showErrorNotification(project, "Failed to delete task ", detailString);
         }
       }
       catch (IOException e) {
@@ -920,5 +921,4 @@ public class CCStepikConnector {
 
     return false;
   }
-
 }

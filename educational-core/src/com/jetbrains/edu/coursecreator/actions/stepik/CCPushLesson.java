@@ -19,6 +19,7 @@ import com.jetbrains.edu.learning.courseFormat.Course;
 import com.jetbrains.edu.learning.courseFormat.Lesson;
 import com.jetbrains.edu.learning.courseFormat.RemoteCourse;
 import com.jetbrains.edu.learning.courseFormat.Section;
+import com.jetbrains.edu.learning.courseFormat.ext.CourseExt;
 import com.jetbrains.edu.learning.stepik.StepikNames;
 import org.jetbrains.annotations.NotNull;
 
@@ -98,7 +99,7 @@ public class CCPushLesson extends DumbAwareAction {
           }
         }
         else {
-          if (!course.getSections().isEmpty()) {
+          if (CourseExt.getHasSections(course)) {
             final int[] result = new int[1];
             ApplicationManager.getApplication().invokeAndWait(() -> result[0] = Messages
               .showYesNoDialog(project, "Since you have sections, we'll have to wrap not-pushed lessons into sections before upload",
@@ -111,7 +112,7 @@ public class CCPushLesson extends DumbAwareAction {
             }
           }
 
-          if (!course.getSections().isEmpty()) {
+          if (CourseExt.getHasSections(course)) {
             Section section = lesson.getSection();
             assert section != null;
             CCStepikConnector.postSection(project, section, indicator);
@@ -119,14 +120,8 @@ public class CCPushLesson extends DumbAwareAction {
           else {
             final int lessonId = CCStepikConnector.postLesson(project, lesson);
             int sectionId;
-            Section section = lesson.getSection();
-            if (section == null) {
-              final List<Integer> sections = ((RemoteCourse)course).getSectionIds();
-              sectionId = sections.get(sections.size() - 1);
-            }
-            else {
-              sectionId = section.getId();
-            }
+            final List<Integer> sections = ((RemoteCourse)course).getSectionIds();
+            sectionId = sections.get(sections.size() - 1);
             CCStepikConnector.postUnit(lessonId, lesson.getIndex(), sectionId, project);
           }
         }
