@@ -21,8 +21,10 @@ import com.jetbrains.edu.learning.courseFormat.RemoteCourse;
 import com.jetbrains.edu.learning.courseFormat.Section;
 import com.jetbrains.edu.learning.courseFormat.ext.CourseExt;
 import com.jetbrains.edu.learning.stepik.StepikNames;
+import com.twelvemonkeys.lang.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 public class CCPushLesson extends DumbAwareAction {
@@ -102,10 +104,10 @@ public class CCPushLesson extends DumbAwareAction {
           if (CourseExt.getHasSections(course)) {
             final int[] result = new int[1];
             ApplicationManager.getApplication().invokeAndWait(() -> result[0] = Messages
-              .showYesNoDialog(project, "Since you have sections, we'll have to wrap not-pushed lessons into sections before upload",
+              .showYesNoDialog(project, "Since you have sections, we'll have to wrap this lesson into section before upload",
                                "Wrap Lesson Into Sections", "Wrap and Post", "Cancel", null));
             if (result[0] == Messages.YES) {
-              CCStepikConnector.wrapUnpushedLessonsIntoSections(project, course);
+              CCUtils.wrapIntoSection(project, course, Collections.singletonList(lesson), "Section. " + StringUtil.capitalize(lesson.getName()));
             }
             else {
               return;
