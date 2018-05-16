@@ -138,11 +138,11 @@ public class CCStepikConnector {
       addJetBrainsUserAsAdmin(client, getAdminsGroupId(responseString));
       int sectionCount;
       if (CourseExt.getHasSections(course)) {
-        sectionCount = 1;
-        postTopLevelLessons(project, courseOnRemote);
+        sectionCount = postSections(project, courseOnRemote);
       }
       else {
-        sectionCount = postSections(project, courseOnRemote);
+        sectionCount = 1;
+        postTopLevelLessons(project, courseOnRemote);
       }
 
       ApplicationManager.getApplication().invokeAndWait(() -> FileDocumentManager.getInstance().saveAllDocuments());
