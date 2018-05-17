@@ -170,7 +170,7 @@ public class StepikWrappers {
   }
 
   public static class LessonContainer {
-    List<Lesson> lessons;
+    public List<Lesson> lessons;
   }
 
   public static class StepSource {

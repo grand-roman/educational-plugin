@@ -381,16 +381,15 @@ object CCUtils {
   }
 
   @JvmStatic
-  fun lessonFromDir(course: Course, lessonDir: PsiDirectory): Lesson? {
-    val lesson = course.getLesson(lessonDir.name)
-    if (lesson != null) {
-      return lesson
+  fun lessonFromDir(course: Course, lessonDir: PsiDirectory, project: Project): Lesson? {
+    val parentDir = lessonDir.parent
+    if (parentDir != null && parentDir.name == EduUtils.getCourseDir(project).name) {
+      return course.getLesson(lessonDir.name)
     }
-
-    val sectionDir = lessonDir.parent ?: return null
-
-    val section = course.getSection(sectionDir.name) ?: return null
-
-    return section.getLesson(lessonDir.name)
+    else {
+      val sectionDir = lessonDir.parent ?: return null
+      val section = course.getSection(sectionDir.name) ?: return null
+      return section.getLesson(lessonDir.name)
+    }
   }
 }

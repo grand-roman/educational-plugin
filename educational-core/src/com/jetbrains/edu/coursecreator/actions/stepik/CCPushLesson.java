@@ -54,9 +54,17 @@ public class CCPushLesson extends DumbAwareAction {
     if (lessonDir == null) {
       return;
     }
-    final Lesson lesson = CCUtils.lessonFromDir(course, lessonDir);
 
-    if (lesson != null && ((RemoteCourse)course).getId() > 0) {
+    final Lesson lesson = CCUtils.lessonFromDir(course, lessonDir, project);
+    if (lesson == null) {
+      return;
+    }
+
+    if (lesson.getSection() != null && lesson.getSection().getId() <= 0) {
+      return;
+    }
+
+    if (((RemoteCourse)course).getId() > 0) {
       e.getPresentation().setEnabledAndVisible(true);
       if (lesson.getId() <= 0) {
         e.getPresentation().setText("Upload Lesson to Stepik");
@@ -85,8 +93,13 @@ public class CCPushLesson extends DumbAwareAction {
       return;
     }
 
-    final Lesson lesson = course.getLesson(lessonDir.getName());
+    final Lesson lesson = CCUtils.lessonFromDir(course, lessonDir, project);
     if (lesson == null) {
+      return;
+    }
+
+    if (CourseExt.getHasSections(course) && lesson.getSection() == null && lesson.getId() <= 0) {
+      wrapAndPost(project, course, lesson);
       return;
     }
 
@@ -94,40 +107,50 @@ public class CCPushLesson extends DumbAwareAction {
       @Override
       public void run(@NotNull ProgressIndicator indicator) {
         indicator.setText("Uploading lesson to " + StepikNames.STEPIK_URL);
-        if (lesson.getId() > 0) {
-          int lessonId = CCStepikConnector.updateLesson(project, lesson, true);
-          if (lessonId != -1) {
-            CCStepikConnector.showNotification(project, "Lesson updated", CCStepikConnector.seeOnStepikAction("/lesson/" + lessonId));
-          }
-        }
-        else {
-          if (CourseExt.getHasSections(course)) {
-            final int[] result = new int[1];
-            ApplicationManager.getApplication().invokeAndWait(() -> result[0] = Messages
-              .showYesNoDialog(project, "Since you have sections, we'll have to wrap this lesson into section before upload",
-                               "Wrap Lesson Into Sections", "Wrap and Post", "Cancel", null));
-            if (result[0] == Messages.YES) {
-              CCUtils.wrapIntoSection(project, course, Collections.singletonList(lesson), "Section. " + StringUtil.capitalize(lesson.getName()));
-            }
-            else {
-              return;
-            }
-          }
-
-          if (CourseExt.getHasSections(course)) {
-            Section section = lesson.getSection();
-            assert section != null;
-            CCStepikConnector.postSection(project, section, indicator);
-          }
-          else {
-            final int lessonId = CCStepikConnector.postLesson(project, lesson);
-            int sectionId;
-            final List<Integer> sections = ((RemoteCourse)course).getSectionIds();
-            sectionId = sections.get(sections.size() - 1);
-            CCStepikConnector.postUnit(lessonId, lesson.getIndex(), sectionId, project);
-          }
-        }
+        doPush(lesson, project, course);
       }
     });
+  }
+
+  private static void wrapAndPost(Project project, Course course, Lesson lesson) {
+    ApplicationManager.getApplication().invokeAndWait(() -> {
+      int result = Messages.showYesNoDialog(project, "Since you have sections, we'll have to wrap this lesson into section before upload",
+                                            "Wrap Lesson Into Sections", "Wrap and Post", "Cancel", null);
+      if (result == Messages.YES) {
+        CCUtils.wrapIntoSection(project, course, Collections.singletonList(lesson), sectionToWrapIntoName(lesson));
+        CCPushSection.doPush(project, lesson.getSection(), (RemoteCourse)course);
+      }
+    });
+  }
+
+  @NotNull
+  private static String sectionToWrapIntoName(Lesson lesson) {
+    return "Section. " + StringUtil.capitalize(lesson.getName());
+  }
+
+  // public for tests
+  public static void doPush(Lesson lesson, Project project, Course course) {
+    if (lesson.getId() > 0) {
+      int lessonId = CCStepikConnector.updateLesson(project, lesson, true);
+      if (lessonId != -1) {
+        CCStepikConnector.showNotification(project, "Lesson updated", CCStepikConnector.seeOnStepikAction("/lesson/" + lessonId));
+      }
+    }
+    else {
+      if (CourseExt.getHasSections(course)) {
+        Section section = lesson.getSection();
+        assert section != null;
+        int lessonId = CCStepikConnector.postLesson(project, lesson);
+        lesson.unitId = CCStepikConnector.postUnit(lessonId, lesson.getIndex(), section.getId(), project);
+      }
+      else {
+        final int lessonId = CCStepikConnector.postLesson(project, lesson);
+        int sectionId;
+        final List<Integer> sections = ((RemoteCourse)course).getSectionIds();
+        sectionId = sections.get(sections.size() - 1);
+        lesson.unitId = CCStepikConnector.postUnit(lessonId, lesson.getIndex(), sectionId, project);
+      }
+      CCStepikConnector.showNotification(project, "Lesson uploaded", CCStepikConnector.seeOnStepikAction("/lesson/" + lesson.getId()));
+    }
   }
 }

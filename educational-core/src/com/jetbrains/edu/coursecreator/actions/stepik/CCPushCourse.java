@@ -57,6 +57,11 @@ public class CCPushCourse extends DumbAwareAction {
     if (course == null) {
       return;
     }
+    if (doPush(project, course)) return;
+    EduUsagesCollector.courseUploaded();
+  }
+
+  public static boolean doPush(Project project, Course course) {
     if (course instanceof RemoteCourse) {
       ProgressManager.getInstance().run(new Task.Modal(project, "Updating Course", true) {
         @Override
@@ -77,18 +82,19 @@ public class CCPushCourse extends DumbAwareAction {
     }
     else {
       if (CourseExt.getHasSections(course) && CourseExt.getHasTopLevelLessons(course)) {
-        int result = Messages.showYesNoDialog(project, "Since you have sections, we have to wrap top-level lessons into section before upload",
-                                              "Wrap Lessons Into Sections", "Wrap and Post", "Cancel", null);
+        int result = Messages
+          .showYesNoDialog(project, "Since you have sections, we have to wrap top-level lessons into section before upload",
+                           "Wrap Lessons Into Sections", "Wrap and Post", "Cancel", null);
         if (result == Messages.YES) {
           wrapUnpushedLessonsIntoSections(project, course);
         }
         else {
-          return;
+          return true;
         }
       }
       postCourseWithProgress(project, course);
     }
-    EduUsagesCollector.courseUploaded();
+    return false;
   }
 
   private static void updateCourseContent(@NotNull ProgressIndicator indicator, Course course, Project project) {

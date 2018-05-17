@@ -7,10 +7,12 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.Project
 import com.jetbrains.edu.coursecreator.CCUtils
 import com.jetbrains.edu.coursecreator.stepik.CCStepikConnector
 import com.jetbrains.edu.learning.StudyTaskManager
 import com.jetbrains.edu.learning.courseFormat.RemoteCourse
+import com.jetbrains.edu.learning.courseFormat.Section
 import com.jetbrains.edu.learning.stepik.StepikNames
 
 class CCPushSection : DumbAwareAction("Update Section on Stepik", "Update Section on Stepik", null) {
@@ -60,23 +62,33 @@ class CCPushSection : DumbAwareAction("Update Section on Stepik", "Update Sectio
     }
 
     val section = course.getSection(sectionDir.name) ?: return
-    ProgressManager.getInstance().run(object : Task.Modal(project, "Uploading Section", true) {
-      override fun run(indicator: ProgressIndicator) {
-        indicator.text = "Uploading section to " + StepikNames.STEPIK_URL
-        if (section.id > 0) {
-          val updated = CCStepikConnector.updateSection(project, section)
-          if (updated) {
-            CCStepikConnector.showNotification(project, "Section \"${section.name}\" updated",
+    doPush(project, section, course)
+  }
+
+  companion object {
+    @JvmStatic
+    fun doPush(project: Project,
+                       section: Section,
+                       course: RemoteCourse) {
+      ProgressManager.getInstance().run(object : Task.Modal(project, "Uploading Section", true) {
+        override fun run(indicator: ProgressIndicator) {
+          indicator.text = "Uploading section to " + StepikNames.STEPIK_URL
+          if (section.id > 0) {
+            val updated = CCStepikConnector.updateSection(project, section)
+            if (updated) {
+              CCStepikConnector.showNotification(project, "Section \"${section.name}\" updated",
+                                                 CCStepikConnector.seeOnStepikAction("/course/" + course.id))
+            }
+          }
+          else {
+            CCStepikConnector.postSection(project, section, indicator)
+            CCStepikConnector.updateAdditionalSection(project)
+            CCStepikConnector.showNotification(project, "Section \"${section.name}\" posted",
                                                CCStepikConnector.seeOnStepikAction("/course/" + course.id))
           }
         }
-        else {
-          CCStepikConnector.postSection(project, section, indicator)
-          CCStepikConnector.updateAdditionalSection(project)
-          CCStepikConnector.showNotification(project, "Section \"${section.name}\" posted",
-                                             CCStepikConnector.seeOnStepikAction("/course/" + course.id))
-        }
-      }
-    })
+      })
+    }
+
   }
 }

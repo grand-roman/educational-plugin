@@ -209,7 +209,7 @@ public class CCStepikConnector {
       List<Lesson> lessons = ((Section)item).getLessons();
 
       final int sectionId = postModule(project, section, course.getId());
-      section.setId(sectionId);
+      ((Section)item).setId(sectionId);
 
       postLessons(project, indicator, course, sectionId, lessons);
     }
@@ -242,7 +242,6 @@ public class CCStepikConnector {
     final int sectionId = postModule(project, copySection(section), course.getId());
     section.setId(sectionId);
     postLessons(project, indicator, course, sectionId, section.getLessons());
-
 
     return sectionId;
   }
@@ -286,8 +285,7 @@ public class CCStepikConnector {
         indicator.setText2("Publishing lesson " + lesson.getIndex());
       }
       final int lessonId = postLesson(project, lesson);
-      int unitId = postUnit(lessonId, position, sectionId, project);
-      lesson.setId(unitId);
+      lesson.unitId = postUnit(lessonId, position, sectionId, project);
       if (indicator != null) {
         indicator.setFraction((double)lesson.getIndex() / course.getLessons().size());
         indicator.checkCanceled();
@@ -668,17 +666,21 @@ public class CCStepikConnector {
         return null;
       }
 
-      Section section = lesson.getSection();
-      if (section == null) {
-        LOG.warn("Section is null ");
-        return null;
+      int sectionId;
+      if (lesson.getSection() == null) {
+        RemoteCourse course = (RemoteCourse)StudyTaskManager.getInstance(project).getCourse();
+        assert course != null;
+        sectionId = course.getSectionIds().get(0);
       }
-      final Integer sectionId = section.getId();
+      else {
+        sectionId = lesson.getSection().getId();
+      }
+
       if (!lesson.isAdditional()) {
         updateUnit(lesson.unitId, lesson.getId(), lesson.getIndex(), sectionId, project);
       }
-      return new Gson().fromJson(responseString, RemoteCourse.class).
-        getLessons(true).get(0);
+
+      return new Gson().fromJson(responseString, StepikWrappers.LessonContainer.class).lessons.get(0);
     }
     catch (IOException e) {
       LOG.error(e.getMessage());

@@ -50,7 +50,7 @@ public class CCPushTask extends DumbAwareAction {
     if (lessonDir == null) {
       return;
     }
-    Lesson lesson = CCUtils.lessonFromDir(course, lessonDir);
+    Lesson lesson = CCUtils.lessonFromDir(course, lessonDir, project);
     if (lesson != null && lesson.getId() > 0 && ((RemoteCourse)course).getId() > 0) {
       e.getPresentation().setEnabledAndVisible(true);
       final Task task = lesson.getTask(taskDir.getName());
@@ -85,7 +85,7 @@ public class CCPushTask extends DumbAwareAction {
     final PsiDirectory lessonDir = taskDir.getParentDirectory();
     if (lessonDir == null) return;
 
-    Lesson lesson = CCUtils.lessonFromDir(course, lessonDir);
+    Lesson lesson = CCUtils.lessonFromDir(course, lessonDir, project);
     if (lesson == null) return;
 
     final Task task = lesson.getTask(taskDir.getName());
