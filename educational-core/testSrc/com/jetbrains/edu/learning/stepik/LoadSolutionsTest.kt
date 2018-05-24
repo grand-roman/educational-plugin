@@ -20,16 +20,10 @@ class LoadSolutionsTest : StepikTestCase() {
   private val taskStatusErrorMessage = "Wrong task status, expected Solved"
   private val fileUpdateErrorMessage = "File text weren't updated"
 
-  override fun setUp() {
-    super.setUp()
-    configureByTaskFile(getInitialFileName())
-    val course = StudyTaskManager.getInstance(project).course
-    CCStepikConnector.postCourseWithProgress(project, course!!)
-    solveFirstTask()
-  }
-
   @Test
   fun testTaskStatuses() {
+    courseWithNoPlaceholders()
+    solveFirstTask()
     val task = firstTask(StudyTaskManager.getInstance(project).course)
     val progresses = Array(1, { PROGRESS_ID_PREFIX + task.stepId.toString() })
     val taskStatuses = taskStatuses(progresses)
@@ -41,6 +35,8 @@ class LoadSolutionsTest : StepikTestCase() {
 
   @Test
   fun testTasksToUpdate() {
+    courseWithNoPlaceholders()
+    solveFirstTask()
     val course = StudyTaskManager.getInstance(project).course!! as RemoteCourse
     val task = firstTask(StudyTaskManager.getInstance(project).course)
     val courseFromStepik = StepikConnector.getCourseFromStepik(EduSettings.getInstance().user, course.id, true) as RemoteCourse
@@ -55,17 +51,19 @@ class LoadSolutionsTest : StepikTestCase() {
 
   @Test
   fun testLoadSolution() {
+    courseWithNoPlaceholders()
+    solveFirstTask()
     doCheck()
-
-
   }
 
   @Test
   fun testLoadSolutionWithPlaceholders() {
+    courseWithPlaceholders()
+    solveFirstTask()
     doCheck(this::checkPlaceholders)
   }
 
-  private fun doCheck(check: (TaskFile, TaskFile) -> Unit = {_, _ -> }) {
+  private fun doCheck(check: (TaskFile, TaskFile) -> Unit = { _, _ -> }) {
     val course = StudyTaskManager.getInstance(project).course!! as RemoteCourse
     val oldTask = firstTask(course)
     val oldTaskFile = oldTask.getTaskFile(getInitialFileName())
@@ -90,7 +88,7 @@ class LoadSolutionsTest : StepikTestCase() {
     remoteCourse!!.init(null, null, false)
     remoteCourse.language = PlainTextLanguage.INSTANCE.id
     StudyTaskManager.getInstance(project).course = remoteCourse
-    configureByTaskFile(getInitialFileName())
+//    configureByTaskFile(getInitialFileName())
     return remoteCourse
   }
 
@@ -134,5 +132,31 @@ class LoadSolutionsTest : StepikTestCase() {
 
   override fun getTestDataPath(): String {
     return super.getTestDataPath() + "/stepik/loadSolutions"
+  }
+
+
+
+  private fun courseWithNoPlaceholders() {
+    val course = courseWithFiles {
+      lesson {
+        eduTask {
+          taskFile("Task.kt", "no placeholders")
+        }
+      }
+    }
+    CCStepikConnector.postCourseWithProgress(project, course!!)
+    solveFirstTask()
+  }
+
+  private fun courseWithPlaceholders() {
+    val course = courseWithFiles {
+      lesson {
+        eduTask {
+          taskFile("Task.kt", "This is a <placeholder taskText=\"task\" possibleAnswer=\"solved\">solved</placeholder>")
+        }
+      }
+    }
+    CCStepikConnector.postCourseWithProgress(project, course!!)
+    solveFirstTask()
   }
 }
