@@ -260,9 +260,31 @@ open class StepikIntegrationTest : StepikTestCase() {
 
     val newSection = newSection("section2", 2)
     localCourse.addSection(newSection)
+    localCourse.init(null, null, false)
     CCPushSection.doPush(project, newSection, localCourse)
 
     val courseFromStepik = findUploadedCourse(localCourse)
+    checkSections(courseFromStepik, localCourse)
+  }
+
+  fun `test top-level lessons wrapped into section`() {
+    val courseToPost = courseWithFiles {
+      lesson("lesson1")
+      {
+        eduTask {
+          taskFile("fizz.kt")
+        }
+      }
+    }
+
+    StudyTaskManager.getInstance(project).course = courseToPost
+    courseToPost.init(null, null, false)
+    CCPushCourse.doPush(project, courseToPost)
+    val localCourse = StudyTaskManager.getInstance(project).course
+    CCUtils.wrapIntoSection(project, localCourse!!, localCourse.lessons, "section1")
+    CCPushCourse.doPush(project, localCourse)
+
+    val courseFromStepik = findUploadedCourse(localCourse as RemoteCourse)
     checkSections(courseFromStepik, localCourse)
   }
 

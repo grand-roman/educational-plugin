@@ -98,6 +98,10 @@ public class CCPushCourse extends DumbAwareAction {
   }
 
   private static void updateCourseContent(@NotNull ProgressIndicator indicator, Course course, Project project) {
+    if (!((RemoteCourse)course).getSectionIds().isEmpty() && course.getLessons().isEmpty()) {
+      deleteSection(project, ((RemoteCourse)course).getSectionIds().get(0));
+    }
+
     for (Section section : course.getSections()) {
       if (section.getId() > 0) {
         updateSection(project, section);
@@ -114,8 +118,12 @@ public class CCPushCourse extends DumbAwareAction {
         updateLesson(project, lesson, false);
       }
       else {
-        postLesson(project, lesson);
+        int lessonId = postLesson(project, lesson);
+        Integer sectionId = ((RemoteCourse)course).getSectionIds().get(0);
+        postUnit(lessonId, lesson.getIndex(), sectionId, project);
       }
     }
+
+
   }
 }
