@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.KeyedLazyInstance;
 import com.jetbrains.edu.learning.EduConfiguratorManager;
+import com.jetbrains.edu.learning.EduNames;
 import com.jetbrains.edu.learning.EduSettings;
 import com.jetbrains.edu.learning.EduVersions;
 import com.jetbrains.edu.learning.courseFormat.tasks.Task;
@@ -88,7 +89,9 @@ public class RemoteCourse extends Course {
       return false;
     }
 
-    int topLevelItemsWithoutAdditional = courseFromServer.sectionIds.size() - 1;
+    Section lastSection = StepikConnector.getSection(courseFromServer.sectionIds.get(courseFromServer.sectionIds.size() - 1));
+    boolean hasAdditional = EduNames.ADDITIONAL_MATERIALS.equals(lastSection.getName()) || StepikNames.PYCHARM_ADDITIONAL.equals(lastSection.getName());
+    int topLevelItemsWithoutAdditional = courseFromServer.sectionIds.size() - (hasAdditional ? 1 : 0);
     int topLevelItemsSize = (getLessons(false).isEmpty() ? 0 : 1) + getSections().size();
     if (topLevelItemsSize < topLevelItemsWithoutAdditional) {
       return false;
