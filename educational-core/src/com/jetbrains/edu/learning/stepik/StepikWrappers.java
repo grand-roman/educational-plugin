@@ -102,11 +102,11 @@ public class StepikWrappers {
 
     private static void setTests(@NotNull Task task, @NotNull StepOptions source, @NotNull Project project) {
       FileDocumentManager.getInstance().saveAllDocuments();
+      source.test = new ArrayList<>();
       if (task.getLesson().isAdditional()) {
         return;
       }
 
-      source.test = new ArrayList<>();
       List<VirtualFile> testFiles = EduUtils.getTestFiles(task, project);
       for (VirtualFile testFile : testFiles) {
         addFileWrapper(testFile, source.test);
