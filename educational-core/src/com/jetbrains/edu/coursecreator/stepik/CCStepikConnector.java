@@ -259,7 +259,6 @@ public class CCStepikConnector {
     boolean updated = updateSectionInfo(project, copySection(section));
     if (updated) {
       for (Lesson lesson : section.getLessons()) {
-        updateLessonInfo(project, lesson, false);
         updateLesson(project, lesson, false);
       }
     }
@@ -323,15 +322,17 @@ public class CCStepikConnector {
     }
   }
 
-  public static void updateAdditionalFiles(Course course, @NotNull final Project project, int stepikId) {
-    final Lesson lesson = CCUtils.createAdditionalLesson(course, project, StepikNames.PYCHARM_ADDITIONAL);
-    if (lesson != null) {
-      lesson.setId(stepikId);
+  public static void updateAdditionalFiles(Course course, @NotNull final Project project, Lesson lesson) {
+    final Lesson postedLesson = CCUtils.createAdditionalLesson(course, project, StepikNames.PYCHARM_ADDITIONAL);
+    if (postedLesson != null) {
+      postedLesson.setId(lesson.getId());
+      postedLesson.setSection(lesson.getSection());
       final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
       if (indicator != null) {
         indicator.setText2("Publishing additional files");
       }
-      updateLesson(project, lesson, false);
+
+      updateLesson(project, postedLesson, false);
     }
   }
 
@@ -583,13 +584,15 @@ public class CCStepikConnector {
       final Section section = StepikConnector.getSection(sectionId);
       if (StepikNames.PYCHARM_ADDITIONAL.equals(section.getName())) {
         section.setPosition(sectionIds.size());
+        section.setId(sectionId);
         updateSectionInfo(project, copySection(section));
         final List<Lesson> lessons = StepikConnector.getLessons(courseInfo, sectionId);
         lessons.stream()
           .filter(Lesson::isAdditional)
           .findFirst()
           .ifPresent(lesson -> {
-            updateAdditionalFiles(courseInfo, project, lesson.getId());
+            lesson.setSection(section);
+            updateAdditionalFiles(courseInfo, project, lesson);
             additionalMaterialsUpdated.set(true);
           });
       }

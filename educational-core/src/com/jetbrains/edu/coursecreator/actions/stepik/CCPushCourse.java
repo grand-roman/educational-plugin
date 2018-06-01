@@ -114,7 +114,6 @@ public class CCPushCourse extends DumbAwareAction {
 
     for (Lesson lesson : course.getLessons()) {
       if (lesson.getId() > 0) {
-        updateLessonInfo(project, lesson, false);
         updateLesson(project, lesson, false);
       }
       else {

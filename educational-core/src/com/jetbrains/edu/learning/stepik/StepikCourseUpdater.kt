@@ -131,6 +131,10 @@ class StepikCourseUpdater(val course: RemoteCourse, val project: Project) {
       sectionFromServer.lessons.withIndex().forEach { (index, lesson) -> lesson.index = index + 1 }
 
       val currentSection = sectionsById[sectionFromServer.id]
+      val isTopLevelLessonsSection = sectionFromServer.name == course.name
+      if (isTopLevelLessonsSection) {
+        return
+      }
 
       val currentLessons = currentSection!!.lessons.map { it.id }
 
