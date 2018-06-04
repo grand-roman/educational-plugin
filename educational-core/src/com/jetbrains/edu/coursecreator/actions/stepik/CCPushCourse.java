@@ -63,6 +63,17 @@ public class CCPushCourse extends DumbAwareAction {
 
   public static boolean doPush(Project project, Course course) {
     if (course instanceof RemoteCourse) {
+      if (CourseExt.getHasSections(course) && CourseExt.getHasTopLevelLessons(course)) {
+        boolean hasUnpushedLessons = course.getLessons().stream().anyMatch(lesson -> lesson.getId() == 0);
+        if (hasUnpushedLessons) {
+          int result = Messages
+            .showYesNoDialog(project, "Since you have sections, we have to wrap top-level lessons into section before upload",
+                             "Wrap Lessons Into Sections", "Wrap and Post", "Cancel", null);
+          if (result == Messages.YES) {
+            wrapUnpushedLessonsIntoSections(project, course);
+          }
+        }
+      }
       ProgressManager.getInstance().run(new Task.Modal(project, "Updating Course", true) {
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
