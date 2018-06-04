@@ -259,7 +259,12 @@ public class CCStepikConnector {
     boolean updated = updateSectionInfo(project, copySection(section));
     if (updated) {
       for (Lesson lesson : section.getLessons()) {
-        updateLesson(project, lesson, false);
+        if (lesson.getId() > 0) {
+          updateLesson(project, lesson, false);
+        }
+        else {
+          postLesson(project, lesson);
+        }
       }
     }
 
