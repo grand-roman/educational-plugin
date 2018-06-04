@@ -264,6 +264,7 @@ public class CCStepikConnector {
         }
         else {
           postLesson(project, lesson);
+          lesson.unitId = postUnit(lesson.getId(), lesson.getIndex(), section.getId(), project);
         }
       }
     }
