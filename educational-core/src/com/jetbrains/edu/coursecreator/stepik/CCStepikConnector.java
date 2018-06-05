@@ -15,6 +15,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializer;
@@ -150,36 +151,13 @@ public class CCStepikConnector {
 
       ApplicationManager.getApplication().invokeAndWait(() -> FileDocumentManager.getInstance().saveAllDocuments());
       postAdditionalFiles(course, project, courseOnRemote.getId(), sectionCount + 1);
+      courseOnRemote.init(null, null, true);
       StudyTaskManager.getInstance(project).setCourse(courseOnRemote);
       courseOnRemote.setUpdated();
       showNotification(project, "Course is published", seeOnStepikAction("/course/" + courseOnRemote.getId()));
     }
     catch (IOException e) {
       LOG.error(e.getMessage());
-    }
-  }
-
-  private static void postAsOneSection(@NotNull Project project, @NotNull RemoteCourse course) {
-    final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-    final Section section = new Section();
-    section.setName(String.valueOf(course.getName()));
-    section.setPosition(1);
-
-    final int sectionId = postModule(course.getId(), section, project);
-    course.getSectionIds().add(sectionId);
-    int position = 1;
-    for (Lesson lesson : course.getLessons()) {
-      if (indicator != null) {
-        indicator.checkCanceled();
-        indicator.setText2("Publishing lesson " + lesson.getIndex());
-      }
-      final int lessonId = postLesson(project, lesson);
-      postUnit(lessonId, position, sectionId, project);
-      if (indicator != null) {
-        indicator.setFraction((double)lesson.getIndex() / course.getLessons().size());
-        indicator.checkCanceled();
-      }
-      position += 1;
     }
   }
 
@@ -466,7 +444,7 @@ public class CCStepikConnector {
     return -1;
   }
 
-  private static boolean updateSectionInfo(@NotNull Project project, @NotNull Section section) {
+  public static boolean updateSectionInfo(@NotNull Project project, @NotNull Section section) {
     final HttpPut request = new HttpPut(StepikNames.STEPIK_API_URL + StepikNames.SECTIONS + "/" + section.getId());
     final StepikWrappers.SectionWrapper sectionContainer = new StepikWrappers.SectionWrapper();
     sectionContainer.setSection(section);
@@ -569,7 +547,7 @@ public class CCStepikConnector {
       final CloseableHttpClient client = StepikAuthorizedClient.getHttpClient();
       if (client == null) {
         LOG.warn("Http client is null");
-        return false;
+        return;
       }
       final CloseableHttpResponse response = client.execute(request);
       final HttpEntity responseEntity = response.getEntity();
@@ -867,28 +845,35 @@ public class CCStepikConnector {
     return null;
   }
 
+  public static void deleteSection(@NotNull Project project, final int sectionId) {
+    final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.SECTIONS + "/" + sectionId);
+    deleteFromStepik(project, request);
+  }
+
   public static void deleteTask(@NotNull final Integer task, Project project) {
     final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.STEP_SOURCES + task);
-    ApplicationManager.getApplication().invokeLater(() -> {
-      try {
-        final CloseableHttpClient client = StepikAuthorizedClient.getHttpClient();
-        if (client == null) return;
-        final CloseableHttpResponse response = client.execute(request);
-        final HttpEntity responseEntity = response.getEntity();
-        final String responseString = responseEntity != null ? EntityUtils.toString(responseEntity) : "";
-        EntityUtils.consume(responseEntity);
-        final StatusLine line = response.getStatusLine();
-        if (line.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-          LOG.error("Failed to delete task " + responseString);
-          final String detailString = getErrorDetail(responseString);
+    deleteFromStepik(project, request);
+  }
 
-          showErrorNotification(project, "Failed to delete task ", detailString);
-        }
+  private static void deleteFromStepik(@NotNull Project project, @NotNull HttpDelete request) {
+    try {
+      final CloseableHttpClient client = StepikAuthorizedClient.getHttpClient();
+      if (client == null) return;
+      final CloseableHttpResponse response = client.execute(request);
+      final HttpEntity responseEntity = response.getEntity();
+      final String responseString = responseEntity != null ? EntityUtils.toString(responseEntity) : "";
+      EntityUtils.consume(responseEntity);
+      final StatusLine line = response.getStatusLine();
+      if (line.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+        LOG.error("Failed to delete item " + responseString);
+        final String detailString = getErrorDetail(responseString);
+
+        showErrorNotification(project, "Failed to delete item ", detailString);
       }
-      catch (IOException e) {
-        LOG.error(e.getMessage());
-      }
-    });
+    }
+    catch (IOException e) {
+      LOG.error(e.getMessage());
+    }
   }
 
   public static boolean postTask(final Project project, @NotNull final Task task, final int lessonId) {
@@ -897,8 +882,9 @@ public class CCStepikConnector {
 
     final HttpPost request = new HttpPost(StepikNames.STEPIK_API_URL + "/step-sources");
     final Gson gson = new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();
-    final String requestBody = gson.toJson(new StepikWrappers.StepSourceWrapper(project, task, lessonId));
-    request.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
+    final String[] requestBody = new String[1];
+    ApplicationManager.getApplication().invokeAndWait(() -> requestBody[0] = gson.toJson(new StepikWrappers.StepSourceWrapper(project, task, lessonId)));
+    request.setEntity(new StringEntity(requestBody[0], ContentType.APPLICATION_JSON));
 
     try {
       final CloseableHttpClient client = StepikAuthorizedClient.getHttpClient();

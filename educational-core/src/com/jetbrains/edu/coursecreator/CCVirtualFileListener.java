@@ -6,6 +6,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.openapi.vfs.VirtualFileListener;
+import com.jetbrains.edu.coursecreator.stepik.StepikCourseChangeHandler;
 import com.jetbrains.edu.learning.EduConfigurator;
 import com.jetbrains.edu.learning.EduUtils;
 import com.jetbrains.edu.learning.StudyTaskManager;
@@ -32,6 +33,7 @@ public class CCVirtualFileListener implements VirtualFileListener {
       Task task = EduUtils.getTaskForFile(myProject, createdFile);
       assert task != null;
       task.addTaskFile(taskRelativePath);
+      StepikCourseChangeHandler.INSTANCE.changed(task);
     }
   }
 
@@ -61,6 +63,9 @@ public class CCVirtualFileListener implements VirtualFileListener {
     }
     final EduConfigurator<?> configurator = CourseExt.getConfigurator(course);
     if (EduUtils.isTaskDirectory(myProject, removedFile)) {
+      Task task = EduUtils.getTask(removedFile, course);
+      assert task != null;
+      StepikCourseChangeHandler.INSTANCE.contentChanged(task.getLesson());
       deleteTask(course, removedFile);
       if (configurator != null) {
         ApplicationManager.getApplication().invokeLater(() -> configurator.getCourseBuilder().refreshProject(myProject));
@@ -68,9 +73,11 @@ public class CCVirtualFileListener implements VirtualFileListener {
     }
     if (EduUtils.getLesson(removedFile, course) != null) {
       deleteLesson(course, removedFile);
+      StepikCourseChangeHandler.INSTANCE.contentChanged(course);
     }
     if (course.getSection(removedFile.getName()) != null) {
       deleteSection(course, removedFile);
+      StepikCourseChangeHandler.INSTANCE.contentChanged(course);
     }
   }
 
@@ -84,10 +91,12 @@ public class CCVirtualFileListener implements VirtualFileListener {
     if (section != null) {
       CCUtils.updateHigherElements(parentDir.getChildren(), file -> section.getLesson(file.getName()), removedLesson.getIndex(), -1);
       section.removeLesson(removedLesson);
+      StepikCourseChangeHandler.INSTANCE.contentChanged(section);
     }
     else {
       CCUtils.updateHigherElements(parentDir.getChildren(), file -> course.getItem(file.getName()), removedLesson.getIndex(), -1);
       course.removeLesson(removedLesson);
+      StepikCourseChangeHandler.INSTANCE.contentChanged(course);
     }
   }
 
@@ -112,6 +121,7 @@ public class CCVirtualFileListener implements VirtualFileListener {
     }
     CCUtils.updateHigherElements(lessonDir.getChildren(), file -> lesson.getTask(file.getName()), task.getIndex(), -1);
     lesson.getTaskList().remove(task);
+    StepikCourseChangeHandler.INSTANCE.contentChanged(lesson);
   }
 
   private static void deleteTaskFile(@NotNull Project project, @NotNull final VirtualFile removedTaskFile, @NotNull TaskFile taskFile) {
@@ -120,5 +130,6 @@ public class CCVirtualFileListener implements VirtualFileListener {
       return;
     }
     task.getTaskFiles().remove(EduUtils.pathRelativeToTask(project, removedTaskFile));
+    StepikCourseChangeHandler.INSTANCE.changed(task);
   }
 }

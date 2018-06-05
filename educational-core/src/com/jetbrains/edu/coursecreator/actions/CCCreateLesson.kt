@@ -1,6 +1,7 @@
 package com.jetbrains.edu.coursecreator.actions
 
 import com.intellij.openapi.project.Project
+import com.jetbrains.edu.coursecreator.stepik.StepikCourseChangeHandler
 import com.jetbrains.edu.learning.EduNames
 import com.jetbrains.edu.learning.courseFormat.Course
 import com.jetbrains.edu.learning.courseFormat.Lesson

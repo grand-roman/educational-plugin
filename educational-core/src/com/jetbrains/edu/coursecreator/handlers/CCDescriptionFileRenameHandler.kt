@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.InputValidatorEx
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFileSystemItem
+import com.jetbrains.edu.coursecreator.stepik.StepikCourseChangeHandler
 import com.jetbrains.edu.learning.EduNames
 import com.jetbrains.edu.learning.EduUtils
 import com.jetbrains.edu.learning.courseFormat.Course
@@ -41,7 +42,6 @@ class CCDescriptionFileRenameHandler : CCRenameHandler() {
     if (newName != null) {
       val format = DescriptionFormat.values().find { it.descriptionFileName == newName } ?: error("Unexpected new name: `$newName`")
       task.descriptionFormat = format
-
       runWriteAction {
         try {
           item.virtualFile.rename(CCRenameHandler::class.java, newName)
@@ -49,6 +49,7 @@ class CCDescriptionFileRenameHandler : CCRenameHandler() {
           LOG.error(e)
         }
       }
+      StepikCourseChangeHandler.changed(task)
     }
   }
 

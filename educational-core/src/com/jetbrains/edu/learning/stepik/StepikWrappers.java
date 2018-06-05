@@ -221,6 +221,7 @@ public class StepikWrappers {
     int section;
     int lesson;
     int position;
+    public Date update_date;
     List<Integer> assignments;
 
     public void setSection(int section) {
