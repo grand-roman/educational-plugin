@@ -1,10 +1,13 @@
 package com.jetbrains.edu.learning.courseFormat;
 
+import com.jetbrains.edu.learning.courseFormat.ext.PushStatus;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class StudyItem {
   // from 1 to number of items
   private int myIndex = -1;
+
+  private PushStatus pushStatus = PushStatus.NOTHING;
 
   // Non unique lesson/task/section names can be received from stepik. In this case unique directory name is generated,
   // but original non unique name is displayed
@@ -45,5 +48,13 @@ public abstract class StudyItem {
 
   public void setIndex(int index) {
     myIndex = index;
+  }
+
+  public PushStatus getPushStatus() {
+    return pushStatus;
+  }
+
+  public void setPushStatus(PushStatus pushStatus) {
+    this.pushStatus = pushStatus;
   }
 }
