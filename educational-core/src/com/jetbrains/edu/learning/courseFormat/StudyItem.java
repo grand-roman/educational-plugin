@@ -6,6 +6,8 @@ public abstract class StudyItem {
   // from 1 to number of items
   private int myIndex = -1;
 
+  private PushStatus pushStatus = PushStatus.NOTHING;
+
   // Non unique lesson/task/section names can be received from stepik. In this case unique directory name is generated,
   // but original non unique name is displayed
   @Nullable private String myCustomPresentableName = null;
@@ -45,5 +47,13 @@ public abstract class StudyItem {
 
   public void setIndex(int index) {
     myIndex = index;
+  }
+
+  public PushStatus getPushStatus() {
+    return pushStatus;
+  }
+
+  public void setPushStatus(PushStatus pushStatus) {
+    this.pushStatus = pushStatus;
   }
 }
